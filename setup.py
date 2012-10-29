@@ -16,7 +16,7 @@ class TestCommand(test):
 
 setup(
     name='django-lazy-thumbnails',
-    version='0.1',
+    version='1.0b',
     url='http://github.com/hcarvalhoalves/django-lazy-thumbnails',
     description='Simple and scalable thumbnail generation via REST API',
     long_description=readfile('README.md'),
@@ -28,7 +28,7 @@ setup(
     ],
     include_package_data=True,
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Framework :: Django',
         'Intended Audience :: Developers',
