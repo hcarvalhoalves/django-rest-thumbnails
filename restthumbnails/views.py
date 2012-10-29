@@ -5,17 +5,12 @@ from django.views.generic import View
 from django.utils.hashcompat import md5_constructor
 
 from restthumbnails.exceptions import ThumbnailError
-from restthumbnails.helpers import get_thumbnail, to_key, to_hash
+from restthumbnails.helpers import get_thumbnail
 from restthumbnails.settings import LOCK_TIMEOUT
 
 
 class ThumbnailView(View):
    def get(self, request, *args, **kwargs):
-        # Return 403 on untrusted requests - HTTP agents like Varnish
-        # will cache this response, so this doubles as a rate limiter
-        if request.GET.get('secret') != to_hash(**self.kwargs):
-            return http.HttpResponseForbidden()
-
         # Return 400 on invalid parameters - HTTP agents should also
         # cache this response
         try:
@@ -23,15 +18,20 @@ class ThumbnailView(View):
         except ThumbnailError, e:
             return http.HttpResponseBadRequest(e)
 
+        # Return 403 on untrusted requests - HTTP agents like Varnish
+        # will cache this response, so this doubles as a rate limiter
+        secret_param = getattr(settings, 'REST_THUMBNAILS_SECRET_PARAM', 'secret')
+        if request.GET.get(secret_param) != thumbnail.secret:
+            return http.HttpResponseForbidden()
+
         # Make only one worker busy on this thumbnail by managing a lock
-        key = to_key(**self.kwargs)
-        if cache.get(key) is None:
+        if cache.get(thumbnail.key) is None:
             try:
                 timeout = getattr(settings, 'REST_THUMBNAILS_LOCK_TIMEOUT', 30)
-                cache.set(key, True, timeout)
+                cache.set(thumbnail.key, True, timeout)
                 thumbnail.generate()
             finally:
-                cache.delete(key)
+                cache.delete(thumbnail.key)
             # Return 301 - HTTP agents will handle the load from now on
             return http.HttpResponsePermanentRedirect(thumbnail.url)
         # Return 404 while other workers have the lock

@@ -6,7 +6,7 @@ from django.test.utils import override_settings
 from django.template import Context
 
 from restthumbnails.exceptions import ThumbnailError
-from restthumbnails.helpers import get_thumbnail, to_key, to_hash
+from restthumbnails.helpers import get_thumbnail, get_thumbnail_proxy, get_key, get_secret
 from restthumbnails.templatetags.thumbnail import thumbnail as thumbnail_tag
 
 from models import ImageModel
@@ -14,23 +14,27 @@ from models import ImageModel
 import os
 
 
-class TemporaryFileTestCase(TestCase):
+class StorageTestCase(TestCase):
     def setUp(self):
         from django.conf import settings
-        self.storage = get_storage_class(settings.REST_THUMBNAILS_STORAGE)()
+        self.source_storage = get_storage_class(getattr(settings,
+            'REST_THUMBNAILS_SOURCE_STORAGE', None))()
+        self.storage = get_storage_class(getattr(settings,
+            'REST_THUMBNAILS_STORAGE', None))()
 
     def tearDown(self):
-        self.storage.cleanup()
+        if hasattr(self.storage, 'cleanup'):
+            self.storage.cleanup()
 
 
 class HelperTest(TestCase):
     def test_can_get_key(self):
         self.assertEqual(
-            to_key('animals/kitten.jpg', '100x100', 'crop'),
+            get_key('animals/kitten.jpg', '100x100', 'crop'),
             'restthumbnails-3b7b81c69082660cdff44ee0b6e07c46')
 
 
-class ThumbnailTagTest(TemporaryFileTestCase):
+class ThumbnailTagTest(StorageTestCase):
     def setUp(self):
         super(ThumbnailTagTest, self).setUp()
         self.source_instance = ImageModel.objects.create(
@@ -38,20 +42,14 @@ class ThumbnailTagTest(TemporaryFileTestCase):
         self.source = self.source_instance.image
         self.ctx = Context()
 
-    def test_can_get_thumbnail_url(self):
-        from django.conf import settings
+    def test_can_get_thumbnail_proxy_url(self):
         thumb = thumbnail_tag(self.ctx, self.source, '100x100', 'crop')
+        secret = get_secret(self.source.name, '100x100', 'crop')
         self.assertIsNotNone(
             thumb)
         self.assertEquals(
-            thumb.name,
-            'images/image_100x100_crop.jpg')
-        self.assertEquals(
-            thumb.path,
-            os.path.join(settings.MEDIA_ROOT, 'tmp/images/image_100x100_crop.jpg'))
-        self.assertEquals(
             thumb.url,
-            os.path.join(settings.MEDIA_URL, 'tmp/images/image_100x100_crop.jpg'))
+            'http://thumbnailserver/t/images/image.jpg/100x100/crop/?secret=%s' % secret)
 
     def test_raise_exception_on_invalid_parameters(self):
         self.assertRaises(
@@ -71,13 +69,13 @@ class ThumbnailTagTest(TemporaryFileTestCase):
             thumbnail_tag, self.ctx, self.source, '200x200', 'foo')
 
 
-class ThumbnailViewTest(TemporaryFileTestCase):
+class ThumbnailViewTest(StorageTestCase):
     def setUp(self):
         super(ThumbnailViewTest, self).setUp()
         self.client = Client()
 
     def get(self, source, size, method, secret=None):
-        secret = secret or to_hash(source, size, method)
+        secret = secret or get_secret(source, size, method)
         url = '/t/%s/%s/%s/?secret=%s' % (source, size, method, secret)
         return self.client.get(url)
 
@@ -114,32 +112,37 @@ class ThumbnailViewTest(TemporaryFileTestCase):
             403)
 
 
-class ThumbnailFileTest(TemporaryFileTestCase):
-    def test_can_crop_thumbnail(self):
+class ThumbnailFileTest(StorageTestCase):
+    def test_can_crop(self):
         thumb = get_thumbnail('animals/kitten.jpg', '100x100', 'crop')
         self.assertTrue(thumb.generate())
+        self.assertTrue(self.storage.exists('animals/kitten_100x100_crop.jpg'))
 
-    def test_can_smart_crop_thumbnail(self):
+    def test_can_smart_crop(self):
         thumb = get_thumbnail('animals/kitten.jpg', '100x100', 'smart')
         self.assertTrue(thumb.generate())
+        self.assertTrue(self.storage.exists('animals/kitten_100x100_smart.jpg'))
 
-    def test_can_crop_in_one_dimension(self):
-        thumb = get_thumbnail('animals/kitten.jpg', 'x100', 'crop')
-        self.assertTrue(thumb.generate())
+    def test_can_crop_on_width(self):
         thumb = get_thumbnail('animals/kitten.jpg', '100x', 'crop')
         self.assertTrue(thumb.generate())
+        self.assertTrue(self.storage.exists('animals/kitten_100x0_crop.jpg'))
+
+    def test_can_crop_on_height(self):
+        thumb = get_thumbnail('animals/kitten.jpg', 'x100', 'crop')
+        self.assertTrue(thumb.generate())
+        self.assertTrue(self.storage.exists('animals/kitten_0x100_crop.jpg'))
 
     def test_can_upscale(self):
-        thumb = get_thumbnail('animals/kitten.jpg', 'x600', 'scale')
+        thumb = get_thumbnail('animals/kitten.jpg', '600x600', 'scale')
         self.assertTrue(thumb.generate())
-        thumb = get_thumbnail('animals/kitten.jpg', '600x', 'scale')
-        self.assertTrue(thumb.generate())
+        self.assertTrue(self.storage.exists('animals/kitten_600x600_scale.jpg'))
 
 
-class DummyThumbnailTest(TestCase):
-    @override_settings(REST_THUMBNAILS_THUMBNAIL_CLASS='restthumbnails.thumbnails.DummyThumbnailFile')
-    def test_can_get_url_for_dummy_thumbnail(self):
-        thumb = get_thumbnail('derp', '100x100', 'crop')
+class DummyImageTest(TestCase):
+    @override_settings(REST_THUMBNAILS_THUMBNAIL_PROXY='restthumbnails.thumbnails.DummyImageProxy')
+    def test_can_get_url(self):
+        thumb = get_thumbnail_proxy('derp', '100x100', 'crop')
         self.assertEqual(
             thumb.url,
             'http://dummyimage.com/100x100')

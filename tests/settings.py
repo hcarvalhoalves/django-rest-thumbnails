@@ -23,4 +23,5 @@ TEST_SETTINGS=dict(
         'django.contrib.admin',
         'restthumbnails',
         'tests'),
-    REST_THUMBNAILS_STORAGE='tests.storages.TemporaryStorage')
+    REST_THUMBNAILS_STORAGE='tests.storages.TemporaryStorage',
+    REST_THUMBNAILS_BASE_URL='http://thumbnailserver/')
