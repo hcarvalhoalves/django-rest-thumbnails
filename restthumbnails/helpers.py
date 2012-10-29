@@ -7,8 +7,8 @@ from restthumbnails import exceptions
 import re
 
 DEFAULT_KEY_PREFIX = 'restthumbnails'
-DEFAULT_THUMBNAIL_FILE = 'restthumbnails.thumbnails.ThumbnailFile'
-DEFAULT_THUMBNAIL_PROXY = 'restthumbnails.thumbnails.ThumbnailProxy'
+DEFAULT_THUMBNAIL_FILE = 'restthumbnails.files.ThumbnailFile'
+DEFAULT_THUMBNAIL_PROXY = 'restthumbnails.proxies.ThumbnailProxy'
 
 RE_SIZE = re.compile(r'(\d+)?x(\d+)?$')
 
