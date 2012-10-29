@@ -5,7 +5,8 @@ from django.test import TestCase
 from django.test.client import Client
 from django.template import Context
 
-from restthumbnails.helpers import get_thumbnail, to_key, InvalidThumbnailError
+from restthumbnails.exceptions import ThumbnailError
+from restthumbnails.helpers import get_thumbnail, to_key, to_hash
 from restthumbnails.templatetags.thumbnail import thumbnail as thumbnail_tag
 
 from models import ImageModel
@@ -25,7 +26,7 @@ class HelperTest(TestCase):
     def test_can_get_key(self):
         self.assertEqual(
             to_key('animals/kitten.jpg', '100x100', 'crop'),
-            'restthumbnails-c28b868ea11dffe3b05e57c1c001e23c')
+            'restthumbnails-3b7b81c69082660cdff44ee0b6e07c46')
 
 
 class ThumbnailTagTest(TemporaryFileTestCase):
@@ -52,19 +53,19 @@ class ThumbnailTagTest(TemporaryFileTestCase):
 
     def test_raise_exception_on_invalid_parameters(self):
         self.assertRaises(
-            InvalidThumbnailError,
+            ThumbnailError,
             thumbnail_tag, self.ctx, self.source, None, None)
         self.assertRaises(
-            InvalidThumbnailError,
+            ThumbnailError,
             thumbnail_tag, self.ctx, self.source, 'foo', 'crop')
         self.assertRaises(
-            InvalidThumbnailError,
+            ThumbnailError,
             thumbnail_tag, self.ctx, self.source, '200', 'crop')
         self.assertRaises(
-            InvalidThumbnailError,
+            ThumbnailError,
             thumbnail_tag, self.ctx, self.source, '200 x 200', 'crop')
         self.assertRaises(
-            InvalidThumbnailError,
+            ThumbnailError,
             thumbnail_tag, self.ctx, self.source, '200x200', 'foo')
 
 
@@ -72,17 +73,43 @@ class ThumbnailViewTest(TemporaryFileTestCase):
     def setUp(self):
         super(ThumbnailViewTest, self).setUp()
         self.client = Client()
-        self.path = 'animals/kitten.jpg'
-        self.size = '100x100'
-        self.method = 'crop'
-        self.request_url = '/t/%s/%s/%s/' % (self.path, self.size, self.method)
 
-    def test_redirect_after_get(self):
-        response = self.client.get(self.request_url)
+    def get(self, source, size, method, secret=None):
+        secret = secret or to_hash(source, size, method)
+        url = '/t/%s/%s/%s/?secret=%s' % (source, size, method, secret)
+        return self.client.get(url)
+
+    def test_301_on_sucessful_get(self):
+        response = self.get('animals/kitten.jpg', '100x100', 'crop')
         self.assertRedirects(
             response,
             'http://mediaserver/media/tmp/animals/kitten_100x100_crop.jpg',
-            status_code=301)
+            301)
+
+    def test_301_then_404_on_invalid_path(self):
+        response = self.get('derp.jpg', '100x100', 'crop')
+        self.assertEqual(
+            response.status_code,
+            301,
+            404)
+
+    def test_400_on_invalid_size(self):
+        response = self.get('animals/kitten.jpg', 'derp', 'crop')
+        self.assertEqual(
+            response.status_code,
+            400)
+
+    def test_400_on_invalid_method(self):
+        response = self.get('animals/kitten.jpg', '100x100', 'derp')
+        self.assertEqual(
+            response.status_code,
+            400)
+
+    def test_403_on_invalid_secret(self):
+        response = self.get('animals/kitten.jpg', '100x100', 'crop', secret='derp')
+        self.assertEqual(
+            response.status_code,
+            403)
 
 
 class ThumbnailFileTest(TemporaryFileTestCase):
