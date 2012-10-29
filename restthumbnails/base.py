@@ -2,6 +2,9 @@ from restthumbnails.helpers import get_secret, get_key
 
 
 class ThumbnailBase(object):
+    """
+    Abstract class used both by ThumbnailFile and ThumbnailProxy instances
+    """
     def __init__(self, source, size, method):
         self.source = source
         self.size = size

@@ -25,6 +25,17 @@ class ThumbnailFileBase(ThumbnailBase):
 
 
 class ThumbnailFile(ThumbnailBase):
+    """
+    Manages the generation of thumbnails using the storage backends
+    defined in settings.
+
+    >>> thumb = ThumbnailFile('path/to/file.jpg', (200, 200), 'crop')
+    >>> thumb.generate()
+    True
+    >>> thumb.url
+    '/media/path/to/file_200x200_crop.jpg'
+
+    """
     def __init__(self, source, size, method):
         super(ThumbnailFile, self).__init__(source, size, method)
         self.source_storage = get_storage_class(getattr(

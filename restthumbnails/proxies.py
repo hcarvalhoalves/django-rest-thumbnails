@@ -21,6 +21,16 @@ class ThumbnailProxyBase(ThumbnailBase):
 
 
 class ThumbnailProxy(ThumbnailProxyBase):
+    """
+    A proxy class used on templates to access the thumbnail URL. The
+    query string will contain a `secret` parameter, used by the view
+    to validate the request.
+
+    >>> thumb = ThumbnailFile('path/to/file.jpg', (200, 200), 'crop')
+    >>> thumb.url
+    '/t/path/to/file.jpg/200x200/crop/?secret=XXX'
+
+    """
     def __init__(self, source, size, method):
         super(ThumbnailProxy, self).__init__(source, size, method)
         self.base_url = getattr(settings,
@@ -42,6 +52,9 @@ class ThumbnailProxy(ThumbnailProxyBase):
 
 
 class DummyImageProxy(ThumbnailBase):
+    """
+    A dummy proxy that always returns a URL from the dummyimage.com site.
+    """
     url_template = 'http://dummyimage.com/%(width)sx%(height)s'
 
     @property
