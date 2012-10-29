@@ -3,3 +3,4 @@
 *.egg-info
 *.sublime*
 *.DS_Store
+tests/media/tmp/

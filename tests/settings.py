@@ -22,4 +22,5 @@ TEST_SETTINGS=dict(
         'django.contrib.sessions',
         'django.contrib.admin',
         'restthumbnails',
-        'tests'))
+        'tests'),
+    REST_THUMBNAILS_STORAGE='tests.storages.TemporaryStorage')

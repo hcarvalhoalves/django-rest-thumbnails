@@ -18,7 +18,7 @@ setup(
     name='django-lazy-thumbnails',
     version='0.1',
     url='http://github.com/hcarvalhoalves/django-lazy-thumbnails',
-    description='Scalable thumbnail generation using background queues',
+    description='Simple and scalable thumbnail generation via REST API',
     long_description=readfile('README.md'),
     author='Henrique Carvalho Alves',
     author_email='hcarvalhoalves@gmail.com',

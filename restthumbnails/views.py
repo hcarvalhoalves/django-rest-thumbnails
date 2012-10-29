@@ -10,20 +10,18 @@ from restthumbnails.settings import LOCK_TIMEOUT
 
 class ThumbnailView(View):
    def get(self, request, *args, **kwargs):
-        path = self.kwargs['path']
-        size = self.kwargs['size']
-
-        key = to_key(path, size)
-        thumbnail = get_thumbnail(path, size)
-
-        # Check if any worker acquired a lock
+        key = to_key(**self.kwargs)
+        thumbnail = get_thumbnail(**self.kwargs)
+        # Make sure only one worker spends time generating the
+        # thumbnail by managing a lock
         if cache.get(key) is None:
             try:
                 cache.set(key, True, LOCK_TIMEOUT)
                 thumbnail.generate()
             finally:
                 cache.delete(key)
-            # Return 301 after succesfully generating thumbnail
+            # Return 301 and let the HTTP layer handle the load
+            # from now on
             return HttpResponsePermanentRedirect(thumbnail.url)
-        # Return 404 while we have a lock
+        # Return 404 while other workers have the lock
         raise Http404
