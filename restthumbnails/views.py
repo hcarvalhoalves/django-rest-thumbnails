@@ -27,7 +27,8 @@ class ThumbnailView(View):
         key = to_key(**self.kwargs)
         if cache.get(key) is None:
             try:
-                cache.set(key, True, LOCK_TIMEOUT)
+                timeout = getattr(settings, 'REST_THUMBNAILS_LOCK_TIMEOUT', 30)
+                cache.set(key, True, timeout)
                 thumbnail.generate()
             finally:
                 cache.delete(key)

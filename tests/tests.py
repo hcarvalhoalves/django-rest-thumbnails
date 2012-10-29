@@ -1,8 +1,8 @@
-from django.conf import settings
 from django.core.cache import cache
 from django.core.files.storage import get_storage_class
 from django.test import TestCase
 from django.test.client import Client
+from django.test.utils import override_settings
 from django.template import Context
 
 from restthumbnails.exceptions import ThumbnailError
@@ -16,6 +16,7 @@ import os
 
 class TemporaryFileTestCase(TestCase):
     def setUp(self):
+        from django.conf import settings
         self.storage = get_storage_class(settings.REST_THUMBNAILS_STORAGE)()
 
     def tearDown(self):
@@ -38,6 +39,7 @@ class ThumbnailTagTest(TemporaryFileTestCase):
         self.ctx = Context()
 
     def test_can_get_thumbnail_url(self):
+        from django.conf import settings
         thumb = thumbnail_tag(self.ctx, self.source, '100x100', 'crop')
         self.assertIsNotNone(
             thumb)
@@ -132,3 +134,12 @@ class ThumbnailFileTest(TemporaryFileTestCase):
         self.assertTrue(thumb.generate())
         thumb = get_thumbnail('animals/kitten.jpg', '600x', 'scale')
         self.assertTrue(thumb.generate())
+
+
+class DummyThumbnailTest(TestCase):
+    @override_settings(REST_THUMBNAILS_THUMBNAIL_CLASS='restthumbnails.thumbnails.DummyThumbnailFile')
+    def test_can_get_url_for_dummy_thumbnail(self):
+        thumb = get_thumbnail('derp', '100x100', 'crop')
+        self.assertEqual(
+            thumb.url,
+            'http://dummyimage.com/100x100')

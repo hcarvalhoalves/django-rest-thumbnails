@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.files.images import ImageFile
 from django.core.files.storage import get_storage_class
 from django.db.models.fields.files import ImageFieldFile
@@ -8,13 +9,35 @@ from restthumbnails import processors
 import os
 
 
-class ThumbnailFile(object):
+class BaseThumbnailFile(object):
     def __init__(self, source, size, method):
         self.source = getattr(source, 'name', source)
         self.size = size
         self.method = method
-        self.source_storage = get_storage_class(SOURCE_STORAGE)()
-        self.storage = get_storage_class(TARGET_STORAGE)()
+
+    @property
+    def name(self):
+        raise NotImplementedError
+
+    @property
+    def path(self):
+        raise NotImplementedError
+
+    @property
+    def url(self):
+        raise NotImplementedError
+
+    def generate(self):
+        raise NotImplementedError
+
+
+class ThumbnailFile(BaseThumbnailFile):
+    def __init__(self, source, size, method):
+        super(ThumbnailFile, self).__init__(source, size, method)
+        self.source_storage = get_storage_class(getattr(
+            settings, 'REST_THUMBNAILS_SOURCE_STORAGE', None))()
+        self.storage = get_storage_class(getattr(
+            settings, 'REST_THUMBNAILS_STORAGE', None))()
 
     def _generate_filename(self):
         fname, ext = os.path.splitext(os.path.basename(self.source))
@@ -52,3 +75,25 @@ class ThumbnailFile(object):
             self.storage.save(self.name, im)
             return True
         return False
+
+
+class DummyThumbnailFile(BaseThumbnailFile):
+    base_url = 'http://dummyimage.com/%(width)sx%(height)s'
+
+    @property
+    def name(self):
+        return None
+
+    @property
+    def path(self):
+        return None
+
+    @property
+    def url(self):
+        options = {
+            'width': self.size[0] or self.size[1],
+            'height': self.size[1]}
+        return self.base_url % options
+
+    def generate(self):
+        return True
