@@ -23,8 +23,8 @@ setup(
     author='Henrique Carvalho Alves',
     author_email='hcarvalhoalves@gmail.com',
     packages=[
-        'lazythumbnails',
-        'lazythumbnails.templatetags',
+        'restthumbnails',
+        'restthumbnails.templatetags',
     ],
     include_package_data=True,
     classifiers=[
