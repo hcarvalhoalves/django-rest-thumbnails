@@ -36,7 +36,7 @@ class ThumbnailProxy(ThumbnailProxyBase):
         self.base_url = getattr(settings,
             'REST_THUMBNAILS_BASE_URL', '/')
         self.view_url = getattr(settings,
-            'REST_THUMBNAILS_VIEW_URL', 't/%(source)s/%(size)s/%(method)s/')
+            'REST_THUMBNAILS_VIEW_URL', '%(source)s/%(size)s/%(method)s/')
 
     @property
     def url(self):

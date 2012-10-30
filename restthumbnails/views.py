@@ -6,8 +6,8 @@ from django.utils.hashcompat import md5_constructor
 
 from restthumbnails.exceptions import ThumbnailError
 from restthumbnails.helpers import get_thumbnail
-from restthumbnails.settings import LOCK_TIMEOUT
 
+DEFAULT_TIMEOUT = 30
 
 class ThumbnailView(View):
    def get(self, request, *args, **kwargs):
@@ -20,14 +20,16 @@ class ThumbnailView(View):
 
         # Return 403 on untrusted requests - HTTP agents like Varnish
         # will cache this response, so this doubles as a rate limiter
-        secret_param = getattr(settings, 'REST_THUMBNAILS_SECRET_PARAM', 'secret')
+        secret_param = getattr(settings,
+            'REST_THUMBNAILS_SECRET_PARAM', 'secret')
         if request.GET.get(secret_param) != thumbnail.secret:
             return http.HttpResponseForbidden()
 
         # Make only one worker busy on this thumbnail by managing a lock
         if cache.get(thumbnail.key) is None:
             try:
-                timeout = getattr(settings, 'REST_THUMBNAILS_LOCK_TIMEOUT', 30)
+                timeout = getattr(settings,
+                    'REST_THUMBNAILS_LOCK_TIMEOUT', DEFAULT_TIMEOUT)
                 cache.set(thumbnail.key, True, timeout)
                 thumbnail.generate()
             finally:

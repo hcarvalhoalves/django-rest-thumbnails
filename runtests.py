@@ -1,9 +1,7 @@
-from django.conf import settings
-from tests.settings import TEST_SETTINGS
-
+import os
 import sys
 
-settings.configure(**TEST_SETTINGS)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'testsuite.test_settings'
 
 def runtests(tests):
     from django.test.simple import DjangoTestSuiteRunner
@@ -13,4 +11,4 @@ def runtests(tests):
     sys.exit(failures)
 
 if __name__ == '__main__':
-    runtests(sys.argv[1:] or ['tests'])
+    runtests(sys.argv[1:] or ['testsuite'])

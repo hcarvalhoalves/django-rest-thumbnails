@@ -17,14 +17,9 @@ import os
 class StorageTestCase(TestCase):
     def setUp(self):
         from django.conf import settings
-        self.source_storage = get_storage_class(getattr(settings,
-            'REST_THUMBNAILS_SOURCE_STORAGE', None))()
         self.storage = get_storage_class(getattr(settings,
             'REST_THUMBNAILS_STORAGE', None))()
-
-    def tearDown(self):
-        if hasattr(self.storage, 'cleanup'):
-            self.storage.cleanup()
+        self.storage.cleanup()
 
 
 class HelperTest(TestCase):
@@ -49,7 +44,7 @@ class ThumbnailTagTest(StorageTestCase):
             thumb)
         self.assertEquals(
             thumb.url,
-            'http://thumbnailserver/t/images/image.jpg/100x100/crop/?secret=%s' % secret)
+            'http://testserver/t/images/image.jpg/100x100/crop/?secret=%s' % secret)
 
     def test_raise_exception_on_invalid_parameters(self):
         self.assertRaises(
@@ -140,7 +135,7 @@ class ThumbnailFileTest(StorageTestCase):
 
 
 class DummyImageTest(TestCase):
-    @override_settings(REST_THUMBNAILS_THUMBNAIL_PROXY='restthumbnails.thumbnails.DummyImageProxy')
+    @override_settings(REST_THUMBNAILS_THUMBNAIL_PROXY='restthumbnails.proxies.DummyImageProxy')
     def test_can_get_url(self):
         thumb = get_thumbnail_proxy('derp', '100x100', 'crop')
         self.assertEqual(
