@@ -108,30 +108,46 @@ class ThumbnailViewTest(StorageTestCase):
 
 
 class ThumbnailFileTest(StorageTestCase):
-    def test_can_crop(self):
-        thumb = get_thumbnail('animals/kitten.jpg', '100x100', 'crop')
+    def thumbnail(self, source, size, method, destination):
+        thumb = get_thumbnail(source, size, method)
         self.assertTrue(thumb.generate())
-        self.assertTrue(self.storage.exists('animals/kitten_100x100_crop.jpg'))
+        self.assertTrue(self.storage.exists(destination))
+        self.assertTrue(self.storage.size(destination) > 0)
+
+    def test_can_crop(self):
+        self.thumbnail(
+            'animals/kitten.jpg',
+            '100x100',
+            'crop',
+            'animals/kitten_100x100_crop.jpg')
 
     def test_can_smart_crop(self):
-        thumb = get_thumbnail('animals/kitten.jpg', '100x100', 'smart')
-        self.assertTrue(thumb.generate())
-        self.assertTrue(self.storage.exists('animals/kitten_100x100_smart.jpg'))
+        self.thumbnail(
+            'animals/kitten.jpg',
+            '100x100',
+            'smart',
+            'animals/kitten_100x100_smart.jpg')
 
     def test_can_crop_on_width(self):
-        thumb = get_thumbnail('animals/kitten.jpg', '100x', 'crop')
-        self.assertTrue(thumb.generate())
-        self.assertTrue(self.storage.exists('animals/kitten_100x0_crop.jpg'))
+        self.thumbnail(
+            'animals/kitten.jpg',
+            '100x',
+            'crop',
+            'animals/kitten_100x0_crop.jpg')
 
     def test_can_crop_on_height(self):
-        thumb = get_thumbnail('animals/kitten.jpg', 'x100', 'crop')
-        self.assertTrue(thumb.generate())
-        self.assertTrue(self.storage.exists('animals/kitten_0x100_crop.jpg'))
+        self.thumbnail(
+            'animals/kitten.jpg',
+            'x100',
+            'crop',
+            'animals/kitten_0x100_crop.jpg')
 
     def test_can_upscale(self):
-        thumb = get_thumbnail('animals/kitten.jpg', '600x600', 'scale')
-        self.assertTrue(thumb.generate())
-        self.assertTrue(self.storage.exists('animals/kitten_600x600_scale.jpg'))
+        self.thumbnail(
+            'animals/kitten.jpg',
+            '600x600',
+            'scale',
+            'animals/kitten_600x600_scale.jpg')
 
 
 class DummyImageTest(TestCase):
