@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.utils.hashcompat import md5_constructor
+from django.utils.crypto import salted_hmac
 
 from restthumbnails import exceptions
 
@@ -22,9 +23,8 @@ def get_secret(source, size, method):
     """
     Get a unique hash based on file path, size, method and SECRET_KEY.
     """
-    secret_sauce = '-'.join((
-        source, size, method, settings.SECRET_KEY))
-    return md5_constructor(secret_sauce).hexdigest()
+    secret_sauce = '-'.join((source, size, method))
+    return salted_hmac(source, secret_sauce).hexdigest()
 
 
 def get_key(source, size, method):

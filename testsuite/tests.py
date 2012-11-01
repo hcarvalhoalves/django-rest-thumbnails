@@ -26,7 +26,7 @@ class HelperTest(TestCase):
     def test_can_get_key(self):
         self.assertEqual(
             get_key('animals/kitten.jpg', '100x100', 'crop'),
-            'restthumbnails-3b7b81c69082660cdff44ee0b6e07c46')
+            'restthumbnails-04c8f5c392a8d2b6ac86ad4e4c1dc5884a3ac317')
 
 
 class ThumbnailTagTest(StorageTestCase):
