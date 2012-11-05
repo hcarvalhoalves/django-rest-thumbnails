@@ -111,7 +111,6 @@ The view signature. You don't need to change this unless you hook the
 
 Thanks
 ------
-The `processors` module is adapted from `easy-thumbnails`[1] by Chris Beaven,
+The `processors` module is adapted from [`easy-thumbnails`](http://github.com/SmileyChris/easy-thumbnails/) by Chris Beaven,
 under the BSD license.
 
-[1](http://github.com/SmileyChris/easy-thumbnails/)
