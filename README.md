@@ -57,7 +57,7 @@ To avoid simultaneous requests to the same thumbnail dogpilling the server, the
 view implements a lock (using `CACHE_BACKEND`). The intermediate requests will
 simply return 404 while another worker is busy generating the thumbnail. Since
 thumbnail generation will average <100ms on decent hardware, you can trade
-consistency high concurrency in large sites.
+consistency for high concurrency in large sites.
 
 What about the client?
 ---------------------
