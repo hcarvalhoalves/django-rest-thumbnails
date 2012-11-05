@@ -69,7 +69,8 @@ There's a template tag to output these URLs automatically. Just add
     {% thumbnail model.image_field "100x100" "crop"  as thumb %}
     <img src="{{ thumb.url }}"/>
 
-This would output something similar to:
+Assuming `REST_THUMBNAILS_BASE_URL = "http://example.com/t/"` on settings, this
+would output:
 
     <img src="http://example.com/t/animals/kitten.jpg/100x100/crop/?secret=04c8f5c392a8d2b6ac86ad4e4c1dc5884a3ac317"/>
 
