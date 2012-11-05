@@ -103,7 +103,7 @@ request on the URL).
 - `REST_THUMBNAILS_STORAGE` (Defaults to `DEFAULT_FILE_STORAGE`):
 The Django file storage class used to output the thumbnails.
 
-- `REST_THUMBNAILS_SECRET_PARAM` (Defaults to `secret`):
+- `REST_THUMBNAILS_SECRET_PARAM` (Defaults to `'secret'`):
 The query string parameter appended to the URL.
 
 - `REST_THUMBNAILS_LOCK_TIMEOUT` (Defaults to `30`):
@@ -116,11 +116,11 @@ posterior requests.
 Client settings
 ---------------
 
-- `REST_THUMBNAILS_BASE_URL` (Defaults to `/`)
+- `REST_THUMBNAILS_BASE_URL` (Defaults to `'/'`):
 The base URL for your server. It can be relative to the same server (like
 `/thumbnails`) or an absolute one (`http://thumbs.example.com/`)
 
-- `REST_THUMBNAILS_VIEW_URL` (Defaults to '%(source)s/%(size)s/%(method)s/')
+- `REST_THUMBNAILS_VIEW_URL` (Defaults to `'%(source)s/%(size)s/%(method)s/'`):
 The view signature. You don't need to change this unless you hook the
 `ThumbnailView` manually.
 
