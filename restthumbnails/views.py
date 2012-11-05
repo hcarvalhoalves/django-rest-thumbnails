@@ -7,34 +7,35 @@ from django.utils.hashcompat import md5_constructor
 from restthumbnails.exceptions import ThumbnailError
 from restthumbnails.helpers import get_thumbnail
 
-DEFAULT_TIMEOUT = 30
+SECRET_PARAM = getattr(settings, 'REST_THUMBNAILS_SECRET_PARAM', 'secret')
+TIMEOUT = getattr(settings, 'REST_THUMBNAILS_LOCK_TIMEOUT', 30)
+
+
+def rescue(status=200):
+    return http.HttpResponse(status=status)
+
 
 class ThumbnailView(View):
    def get(self, request, *args, **kwargs):
-        # Return 400 on invalid parameters - HTTP agents should also
-        # cache this response
+        # Return 400 on invalid parameters
         try:
             thumbnail = get_thumbnail(**self.kwargs)
         except ThumbnailError, e:
-            return http.HttpResponseBadRequest(e)
+            return rescue(status=400)
 
-        # Return 403 on untrusted requests - HTTP agents like Varnish
-        # will cache this response, so this doubles as a rate limiter
-        secret_param = getattr(settings,
-            'REST_THUMBNAILS_SECRET_PARAM', 'secret')
-        if request.GET.get(secret_param) != thumbnail.secret:
-            return http.HttpResponseForbidden()
+        # Return 403 on untrusted requests
+        if request.GET.get(SECRET_PARAM, '') != thumbnail.secret:
+            return rescue(status=403)
 
         # Make only one worker busy on this thumbnail by managing a lock
         if cache.get(thumbnail.key) is None:
             try:
-                timeout = getattr(settings,
-                    'REST_THUMBNAILS_LOCK_TIMEOUT', DEFAULT_TIMEOUT)
-                cache.set(thumbnail.key, True, timeout)
+                cache.set(thumbnail.key, True, TIMEOUT)
                 thumbnail.generate()
             finally:
                 cache.delete(thumbnail.key)
             # Return 301 - HTTP agents will handle the load from now on
             return http.HttpResponsePermanentRedirect(thumbnail.url)
+
         # Return 404 while other workers have the lock
-        raise http.Http404
+        return rescue(status=400)
