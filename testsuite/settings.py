@@ -16,12 +16,15 @@ ROOT_URLCONF = 'testsuite.urls'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:'}}
+        'NAME': ':memory:',
+    },
+}
 
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    }}
+    },
+}
 
 INSTALLED_APPS = (
     'django.contrib.auth',
