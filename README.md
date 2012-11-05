@@ -79,6 +79,19 @@ is a mechanism to validate that requests come from trusted clients, so
 malicious users can't bogg down your server by requesting thousands of kitten
 images at 1280x1280.
 
+You can define only one dimension:
+
+    {% thumbnail model.image_field "500x" "crop" as fat_kitten %}
+
+    {% thumbnail model.image_field "x500" "crop" as tall_kitten %}
+
+You can also choose between 3 different methods:
+
+- `crop`: Crop the image, maintaining the aspect ratio when possible.
+- `scale`: Just scale the image until it matches one or all of the dimensions.
+- `smart`: Smart crop the image by keeping the areas with the highest entropy.
+
+
 Server settings
 ---------------
 
