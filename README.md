@@ -4,32 +4,32 @@ Simple and scalable thumbnail generation via REST API
 
 Why?
 ----
-Most thumbnail libraries are broken for large scale sites by adopting one, or
-both, of the following architectures:
+I couldn't find a thumbnail library suitable to large scale sites because most
+libraries adopt one (or both) of the following architectures:
 
 1. Thumbnails of preset sizes are generated upon user upload and,
 alternatively, via management commands
 2. Thumbnails of arbitrary sizes are generated during template rendering
 
-These options introduces a series of limitations, namely:
+The problems is that on high-traffic sites...
 
-1. You can't generate many thumbnails upon user uploads since that blocks
-workers and raises timeouts
-2. You can't generate many thumbnails during template rendering for the same
+- You can't generate many thumbnails upon user uploads since that blocks
+workers and causes timeouts
+- You can't generate many thumbnails during template rendering for the same
 reasons
-3. You can't introduce extra-overhead by issuing hundreds of database/key-value
-queries to retrieve image metadata
-4. It's not always feasible to regenerate thumbnails for different sizes in
-batch when you have hundreds of gigabytes of legacy data
+- You can't cope with the overhead of issuing hundreds of database/key-value
+store queries to retrieve image metadata
+- You can't generate thumbnails in batch when you have hundreds of gigabytes
+of legacy data
 
-This applications aims to solve it by separating concerns (requesting
-thumbnails vs. generating thumbnails) via a HTTP API so you can leverage
-fast proxies (e.g. Varnish) to cache and handle all the load, while being
-flexible to let you generate thumbnails of arbitrary sizes on demand.
+This application aims to solve these issues by separating concerns (requesting
+thumbnails vs. generating thumbnails) with a REST API. This way you can
+leverage HTTP to cache and handle most of the load with a proxy (e.g. Varnish),
+keeping the flexibility to generate thumbnails of any size on-the-fly.
 
 How to setup the server?
 ----
-You setup a project to be your endpoint, like:
+You setup a django project to serve it with:
 
     from django.conf import settings
     from django.conf.urls.defaults import patterns, url, include
@@ -38,26 +38,44 @@ You setup a project to be your endpoint, like:
         url(r'^t/', include('restthumbnails.urls')),
     )
 
-That's all. Now asking for a URL like:
+You can hook the URL on the same project that hosts your site, but I recommend
+setting up a different domain just to serve the API.
+
+Now, you can request a thumbnail with a URL in the format:
+
+    http://<hostname>/<path_to_source_file>/<size>/<method>/?secret=XXX
+
+That should be self-explanatory. The secret parameter is to validate that
+requests come from trusted clients, so malicious users can't bog down the
+server by requesting thousands of gigantic kitten images.
+
+In this example:
 
     http://example.com/t/animals/kitten.jpg/100x100/crop/?secret=04c8f5c392a8d2b6ac86ad4e4c1dc5884a3ac317
 
-Will resize and crop the file on `<MEDIA_ROOT>/animals/kitten.jpg` using the
-default file storage and issue a permanent redirect to your media server.
-Assuming your `MEDIA_URL` is `http://media.example.com`:
+The request will resize and crop the file at `<MEDIA_ROOT>/animals/kitten.jpg`
+(using the default file storage) and issue `301 Moved Permanently` to the
+output file on your media server.
+
+Assuming `MEDIA_URL = "http://media.example.com"`, that would be:
 
     http://media.example.com/animals/kitten_100x100_crop.jpg
 
-That means you can setup a different worker process/server just to generate
-thumbnails (freeing up your main site workers). It also means you can setup
-a Varnish proxy and make it cache those responses, so only one request hits
-the slow backend (the first one).
+Because this is a `301` response, you can setup a proxy (e.g. Varnish) to cache
+all responses from this domain such that only the first request hits your
+"slow" backend and generates the thumbnail - all posterior requests get
+redirected directly to the media server.
 
-To avoid simultaneous requests to the same thumbnail dogpilling the server, the
-view implements a lock (using `CACHE_BACKEND`). The intermediate requests will
-simply return 404 while another worker is busy generating the thumbnail. Since
-thumbnail generation will average <100ms on decent hardware, you can trade
-consistency for high concurrency in large sites.
+### Handling concurrency
+
+To avoid dogpilling the server with simultaneous requests to the same
+thumbnail, the view implements a lock (using `CACHE_BACKEND`).
+
+While the first request is busy generating the thumbnail, subsequent requests
+will just return `404 Not Found`. Once the first request finishes successfully,
+the `301` response gets cached so all requests following don't hit backend
+anymore. This way we can trade consistency for higher concurrency.
+
 
 What about the client?
 ---------------------
@@ -74,11 +92,9 @@ would output:
 
     <img src="http://example.com/t/animals/kitten.jpg/100x100/crop/?secret=04c8f5c392a8d2b6ac86ad4e4c1dc5884a3ac317"/>
 
-The secret hash is derived from the `SECRET_KEY` setting, so if you are
-serving the API from another server make sure these settings are in sync. This
-is a mechanism to validate that requests come from trusted clients, so
-malicious users can't bogg down your server by requesting thousands of kitten
-images at 1280x1280.
+Because the secret hash is derived from the `SECRET_KEY` setting, make sure
+this setting is in sync between the server and the client, otherwise it will
+return `401 Unauthorized`.
 
 You can define only one dimension:
 
