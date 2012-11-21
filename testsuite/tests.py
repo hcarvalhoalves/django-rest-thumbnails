@@ -80,6 +80,9 @@ class ThumbnailViewTest(StorageTestCase):
             response,
             'http://mediaserver/media/tmp/animals/kitten_100x100_crop.jpg',
             301)
+        print response['Cache-control']
+        self.assertIn('public', response['Cache-control'])
+        self.assertIn('max-age', response['Cache-control'])
 
     def test_301_then_404_on_invalid_path(self):
         response = self.get('derp.jpg', '100x100', 'crop')
