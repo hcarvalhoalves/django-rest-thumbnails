@@ -80,7 +80,6 @@ class ThumbnailViewTest(StorageTestCase):
             response,
             'http://mediaserver/media/tmp/animals/kitten_100x100_crop.jpg',
             301)
-        print response['Cache-control']
         self.assertIn('public', response['Cache-control'])
         self.assertIn('max-age', response['Cache-control'])
 
