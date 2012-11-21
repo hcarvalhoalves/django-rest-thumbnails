@@ -7,16 +7,19 @@ from django.utils.hashcompat import md5_constructor
 from restthumbnails.exceptions import ThumbnailError
 from restthumbnails.helpers import get_thumbnail
 
-SECRET_PARAM = getattr(settings, 'REST_THUMBNAILS_SECRET_PARAM', 'secret')
-TIMEOUT = getattr(settings, 'REST_THUMBNAILS_LOCK_TIMEOUT', 30)
-
 
 def rescue(status=200):
     return http.HttpResponse(status=status)
 
 
 class ThumbnailView(View):
-   def get(self, request, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.use_secret_param = getattr(settings, 'REST_THUMBNAILS_USE_SECRET_PARAM', True)
+        self.secret_param = getattr(settings, 'REST_THUMBNAILS_SECRET_PARAM', 'secret')
+        self.lock_timeout = getattr(settings, 'REST_THUMBNAILS_LOCK_TIMEOUT', 30)
+        super(ThumbnailView, self).__init__(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
         # Return 400 on invalid parameters
         try:
             thumbnail = get_thumbnail(**self.kwargs)
@@ -24,13 +27,13 @@ class ThumbnailView(View):
             return rescue(status=400)
 
         # Return 403 on untrusted requests
-        if request.GET.get(SECRET_PARAM, '') != thumbnail.secret:
+        if self.use_secret_param and request.GET.get(self.secret_param, '') != thumbnail.secret:
             return rescue(status=403)
 
         # Make only one worker busy on this thumbnail by managing a lock
         if cache.get(thumbnail.key) is None:
             try:
-                cache.set(thumbnail.key, True, TIMEOUT)
+                cache.set(thumbnail.key, True, self.lock_timeout)
                 thumbnail.generate()
             finally:
                 cache.delete(thumbnail.key)

@@ -106,6 +106,14 @@ class ThumbnailViewTest(StorageTestCase):
             response.status_code,
             403)
 
+    @override_settings(REST_THUMBNAILS_USE_SECRET_PARAM=False)
+    def test_301_without_secret(self):
+        response = self.get('animals/kitten.jpg', '100x100', 'crop', secret='derp')
+        self.assertRedirects(
+            response,
+            'http://mediaserver/media/tmp/animals/kitten_100x100_crop.jpg',
+            301)
+
 
 class ThumbnailFileTest(StorageTestCase):
     def thumbnail(self, source, size, method, destination):
