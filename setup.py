@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from setuptools import setup
 from setuptools.command.test import test
-
+import os
 
 def readfile(fname):
-    with open(fname) as fd:
-        return u'\n'.join(fd.readlines())
+    base_path = os.path.abspath(os.path.dirname(__file__))
+    fname_path = os.path.abspath(os.path.join(base_path, fname))
+    with open(fname_path) as fd:
+        return fd.read()
 
 
 class TestCommand(test):

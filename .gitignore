@@ -3,5 +3,6 @@
 *.egg-info
 *.sublime*
 *.DS_Store
+build/
 dist/
 testsuite/media/tmp/
