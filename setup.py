@@ -15,9 +15,9 @@ class TestCommand(test):
 
 
 setup(
-    name='django-lazy-thumbnails',
-    version='1.0b8',
-    url='http://github.com/hcarvalhoalves/django-lazy-thumbnails',
+    name='django-rest-thumbnails',
+    version='1.0b9',
+    url='http://github.com/hcarvalhoalves/django-rest-thumbnails',
     description='Simple and scalable thumbnail generation via REST API',
     long_description=readfile('README.md'),
     author='Henrique Carvalho Alves',
