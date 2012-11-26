@@ -10,6 +10,7 @@ from restthumbnails.helpers import get_thumbnail
 
 DEFAULT_RESPONSE_HEADERS = {
     'cache_control': 'public',
+    'max_age': '31536000',
 }
 
 def rescue(status=200, **kwargs):

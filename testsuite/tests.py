@@ -80,7 +80,9 @@ class ThumbnailViewTest(StorageTestCase):
             response,
             'http://mediaserver/media/tmp/animals/kitten_100x100_crop.jpg',
             301)
-        self.assertIn('public', response['Cache-control'])
+        self.assertEqual(
+            response['Cache-control'],
+            'cache-control=public, max-age=31536000')
 
     def test_301_then_404_on_invalid_path(self):
         response = self.get('derp.jpg', '100x100', 'crop')
@@ -94,21 +96,27 @@ class ThumbnailViewTest(StorageTestCase):
         self.assertEqual(
             response.status_code,
             400)
-        self.assertIn('public', response['Cache-control'])
+        self.assertEqual(
+            response['Cache-control'],
+            'cache-control=public, max-age=31536000')
 
     def test_400_on_invalid_method(self):
         response = self.get('animals/kitten.jpg', '100x100', 'derp')
         self.assertEqual(
             response.status_code,
             400)
-        self.assertIn('public', response['Cache-control'])
+        self.assertEqual(
+            response['Cache-control'],
+            'cache-control=public, max-age=31536000')
 
     def test_403_on_invalid_secret(self):
         response = self.get('animals/kitten.jpg', '100x100', 'crop', secret='derp')
         self.assertEqual(
             response.status_code,
             403)
-        self.assertIn('public', response['Cache-control'])
+        self.assertEqual(
+            response['Cache-control'],
+            'cache-control=public, max-age=31536000')
 
     @override_settings(REST_THUMBNAILS_USE_SECRET_PARAM=False)
     def test_301_without_secret(self):
@@ -117,7 +125,9 @@ class ThumbnailViewTest(StorageTestCase):
             response,
             'http://mediaserver/media/tmp/animals/kitten_100x100_crop.jpg',
             301)
-        self.assertIn('public', response['Cache-control'])
+        self.assertEqual(
+            response['Cache-control'],
+            'cache-control=public, max-age=31536000')
 
 
 class ThumbnailFileTest(StorageTestCase):
