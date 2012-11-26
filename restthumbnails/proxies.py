@@ -2,6 +2,7 @@ from django.conf import settings
 from django.utils.encoding import filepath_to_uri
 
 from restthumbnails.base import ThumbnailBase
+from restthumbnails import defaults
 
 import urllib
 import urlparse
@@ -9,11 +10,11 @@ import os
 
 
 class ThumbnailProxyBase(ThumbnailBase):
-    def __init__(self, source, size, method):
+    def __init__(self, source, size, method, extension):
         # FieldFile/ImageFieldFile instances have a `name` attribute
         # with the relative file path
         source = getattr(source, 'name', source)
-        super(ThumbnailProxyBase, self).__init__(source, size, method)
+        super(ThumbnailProxyBase, self).__init__(source, size, method, extension)
 
     @property
     def url(self):
@@ -22,33 +23,28 @@ class ThumbnailProxyBase(ThumbnailBase):
 
 class ThumbnailProxy(ThumbnailProxyBase):
     """
-    A proxy class used on templates to access the thumbnail URL. The
-    query string will contain a `secret` parameter, used by the view
-    to validate the request.
+    A convenience proxy class used on templates to access the thumbnail URL.
 
-    >>> thumb = ThumbnailFile('path/to/file.jpg', (200, 200), 'crop')
+    >>> thumb = ThumbnailProxy('path/to/file.jpg', (200, 200), 'crop', '.jpg')
     >>> thumb.url
-    '/t/path/to/file.jpg/200x200/crop/?secret=XXX'
+    '/path/to/file.jpg__200x200__crop.jpg'
 
     """
-    def __init__(self, source, size, method):
-        super(ThumbnailProxy, self).__init__(source, size, method)
+    def __init__(self, source, size, method, extension):
+        super(ThumbnailProxy, self).__init__(source, size, method, extension)
         self.base_url = getattr(settings,
-            'REST_THUMBNAILS_BASE_URL', '/')
-        self.view_url = getattr(settings,
-            'REST_THUMBNAILS_VIEW_URL', '%(source)s/%(size)s/%(method)s/')
+            'REST_THUMBNAILS_BASE_URL', defaults.DEFAULT_BASE_URL)
+        self.file_signature = getattr(settings,
+            'REST_THUMBNAILS_FILE_SIGNATURE', defaults.DEFAULT_FILE_SIGNATURE)
 
     @property
     def url(self):
-        url = self.view_url % {
+        url = self.file_signature % {
             'source': filepath_to_uri(self.source),
             'size': self.size_string,
-            'method': self.method}
-        qs = urllib.urlencode({
-            'secret': self.secret})
-        return '?'.join((
-            urlparse.urljoin(self.base_url, url),
-            qs))
+            'method': self.method,
+            'extension': self.extension}
+        return urlparse.urljoin(self.base_url, url)
 
 
 class DummyImageProxy(ThumbnailBase):

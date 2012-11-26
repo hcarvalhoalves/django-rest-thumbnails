@@ -1,8 +1,11 @@
 from django.conf.urls.defaults import patterns, url
 
+from restthumbnails.defaults import DEFAULT_URL_REGEX
 from restthumbnails.views import ThumbnailView
 
 
 urlpatterns = patterns('',
-    url(r'^(?P<source>.+)/(?P<size>.+)/(?P<method>.+)/$', ThumbnailView.as_view(), name="generate_thumbnail"),
+    url(regex=DEFAULT_URL_REGEX,
+        view=ThumbnailView.as_view(),
+        name="generate_thumbnail"),
 )

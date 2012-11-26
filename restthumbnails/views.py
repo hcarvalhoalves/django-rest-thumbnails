@@ -2,35 +2,19 @@ from django import http
 from django.core.cache import cache
 from django.conf import settings
 from django.views.generic import View
-from django.utils.hashcompat import md5_constructor
-from django.utils.cache import patch_cache_control
 
+from restthumbnails import defaults
 from restthumbnails.exceptions import ThumbnailError
-from restthumbnails.helpers import get_thumbnail
-
-DEFAULT_RESPONSE_HEADERS = {
-    'cache_control': 'public',
-    'max_age': '31536000',
-}
-
-def rescue(status=200, **kwargs):
-    response = http.HttpResponse(status=status)
-    patch_cache_control(response, **kwargs)
-    return response
-
-
-def redirect_to(redirect_to, **kwargs):
-    response = http.HttpResponsePermanentRedirect(redirect_to)
-    patch_cache_control(response, **kwargs)
-    return response
+from restthumbnails.helpers import get_thumbnail, import_from_path
 
 
 class ThumbnailView(View):
     def __init__(self, *args, **kwargs):
-        self.use_secret_param = getattr(settings, 'REST_THUMBNAILS_USE_SECRET_PARAM', True)
-        self.secret_param = getattr(settings, 'REST_THUMBNAILS_SECRET_PARAM', 'secret')
-        self.lock_timeout = getattr(settings, 'REST_THUMBNAILS_LOCK_TIMEOUT', 10)
-        self.response_headers = getattr(settings, 'REST_THUMBNAILS_RESPONSE_HEADERS', DEFAULT_RESPONSE_HEADERS)
+        self.lock_timeout = getattr(settings,
+            'REST_THUMBNAILS_LOCK_TIMEOUT', defaults.DEFAULT_LOCK_TIMEOUT)
+        self.response_backend = getattr(settings,
+            'REST_THUMBNAILS_RESPONSE_BACKEND', defaults.DEFAULT_RESPONSE_BACKEND)
+        self.sendfile = import_from_path(self.response_backend)
         super(ThumbnailView, self).__init__(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -38,21 +22,15 @@ class ThumbnailView(View):
         try:
             thumbnail = get_thumbnail(**self.kwargs)
         except ThumbnailError, e:
-            return rescue(400, **self.response_headers)
-
-        # Return 403 on untrusted requests
-        if self.use_secret_param and request.GET.get(self.secret_param, '') != thumbnail.secret:
-            return rescue(403, **self.response_headers)
+            return http.HttpResponse(status=400, content=e)
 
         # Make only one worker busy on this thumbnail by managing a lock
         if cache.get(thumbnail.key) is None:
-            try:
-                cache.set(thumbnail.key, True, self.lock_timeout)
-                thumbnail.generate()
-            finally:
+            cache.set(thumbnail.key, True, self.lock_timeout)
+            if thumbnail.generate():
                 cache.delete(thumbnail.key)
-            # Return 301 - HTTP agents will handle the load from now on
-            return redirect_to(thumbnail.url, **self.response_headers)
+                # Internal redirect to the generated file
+                return self.sendfile(request, thumbnail.url)
 
         # Return 404 while there's a lock
-        return rescue(404)
+        return http.HttpResponse(status=404)

@@ -5,10 +5,11 @@ class ThumbnailBase(object):
     """
     Abstract class used both by ThumbnailFile and ThumbnailProxy instances
     """
-    def __init__(self, source, size, method):
+    def __init__(self, source, size, method, extension):
         self.source = source
         self.size = size
         self.method = method
+        self.extension = extension
 
     @property
     def size_string(self):

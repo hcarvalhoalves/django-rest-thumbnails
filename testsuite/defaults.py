@@ -53,4 +53,4 @@ LOGGING = {
 
 REST_THUMBNAILS_STORAGE = 'testsuite.storages.TemporaryStorage'
 
-REST_THUMBNAILS_BASE_URL = '/t/'
+REST_THUMBNAILS_BASE_URL = '/'

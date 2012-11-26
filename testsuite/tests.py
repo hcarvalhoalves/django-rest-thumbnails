@@ -38,30 +38,32 @@ class ThumbnailTagTest(StorageTestCase):
         self.ctx = Context()
 
     def test_can_get_thumbnail_proxy_url(self):
-        thumb = thumbnail_tag(self.ctx, self.source, '100x100', 'crop')
-        secret = get_secret(self.source.name, '100x100', 'crop')
+        thumb = thumbnail_tag(self.ctx, self.source, '100x100', 'crop', '.jpg')
         self.assertIsNotNone(
             thumb)
         self.assertEquals(
             thumb.url,
-            'http://testserver/t/images/image.jpg/100x100/crop/?secret=%s' % secret)
+            'http://example.com/images/image.jpg__100x100__crop.jpg')
 
     def test_raise_exception_on_invalid_parameters(self):
         self.assertRaises(
             ThumbnailError,
-            thumbnail_tag, self.ctx, self.source, None, None)
+            thumbnail_tag, self.ctx, self.source, None, None, None)
         self.assertRaises(
             ThumbnailError,
-            thumbnail_tag, self.ctx, self.source, 'foo', 'crop')
+            thumbnail_tag, self.ctx, self.source, 'foo', 'crop', '.jpg')
         self.assertRaises(
             ThumbnailError,
-            thumbnail_tag, self.ctx, self.source, '200', 'crop')
+            thumbnail_tag, self.ctx, self.source, '200', 'crop', '.jpg')
         self.assertRaises(
             ThumbnailError,
-            thumbnail_tag, self.ctx, self.source, '200 x 200', 'crop')
+            thumbnail_tag, self.ctx, self.source, '200 x 200', 'crop', '.jpg')
         self.assertRaises(
             ThumbnailError,
-            thumbnail_tag, self.ctx, self.source, '200x200', 'foo')
+            thumbnail_tag, self.ctx, self.source, '200x200', 'foo', '.jpg')
+        # self.assertRaises(
+        #     ThumbnailError,
+        #     thumbnail_tag, self.ctx, self.source, '200x200', 'crop', 'foo')
 
 
 class ThumbnailViewTest(StorageTestCase):
@@ -69,114 +71,74 @@ class ThumbnailViewTest(StorageTestCase):
         super(ThumbnailViewTest, self).setUp()
         self.client = Client()
 
-    def get(self, source, size, method, secret=None):
-        secret = secret or get_secret(source, size, method)
-        url = '/t/%s/%s/%s/?secret=%s' % (source, size, method, secret)
+    def get(self, source, size, method, extension):
+        url = '/%s__%s__%s%s' % (source, size, method, extension)
         return self.client.get(url)
 
-    def test_301_on_sucessful_get(self):
-        response = self.get('animals/kitten.jpg', '100x100', 'crop')
-        self.assertRedirects(
-            response,
-            'http://mediaserver/media/tmp/animals/kitten_100x100_crop.jpg',
-            301)
-        self.assertEqual(
-            response['Cache-control'],
-            'cache-control=public, max-age=31536000')
+    @override_settings(REST_THUMBNAILS_RESPONSE_BACKEND='restthumbnails.responses.nginx.sendfile')
+    def test_nginx_headers(self):
+        response = self.get('animals/kitten.jpg', '100x100', 'crop', '.jpg')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['X-Accel-Redirect'], '/animals/kitten.jpg__100x100__crop.jpg')
+        self.assertNotIn('Content-Type', response)
 
-    def test_301_then_404_on_invalid_path(self):
-        response = self.get('derp.jpg', '100x100', 'crop')
-        self.assertEqual(
-            response.status_code,
-            301,
-            404)
+    @override_settings(REST_THUMBNAILS_RESPONSE_BACKEND='restthumbnails.responses.apache.sendfile')
+    def test_apache_headers(self):
+        response = self.get('animals/kitten.jpg', '100x100', 'crop', '.jpg')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['X-Sendfile'], '/animals/kitten.jpg__100x100__crop.jpg')
+        self.assertNotIn('Content-Type', response)
 
     def test_400_on_invalid_size(self):
-        response = self.get('animals/kitten.jpg', 'derp', 'crop')
+        response = self.get('animals/kitten.jpg', 'derp', 'crop', '.jpg')
         self.assertEqual(
             response.status_code,
             400)
-        self.assertEqual(
-            response['Cache-control'],
-            'cache-control=public, max-age=31536000')
 
     def test_400_on_invalid_method(self):
-        response = self.get('animals/kitten.jpg', '100x100', 'derp')
+        response = self.get('animals/kitten.jpg', '100x100', 'derp', '.jpg')
         self.assertEqual(
             response.status_code,
             400)
-        self.assertEqual(
-            response['Cache-control'],
-            'cache-control=public, max-age=31536000')
-
-    def test_403_on_invalid_secret(self):
-        response = self.get('animals/kitten.jpg', '100x100', 'crop', secret='derp')
-        self.assertEqual(
-            response.status_code,
-            403)
-        self.assertEqual(
-            response['Cache-control'],
-            'cache-control=public, max-age=31536000')
-
-    @override_settings(REST_THUMBNAILS_USE_SECRET_PARAM=False)
-    def test_301_without_secret(self):
-        response = self.get('animals/kitten.jpg', '100x100', 'crop', secret='derp')
-        self.assertRedirects(
-            response,
-            'http://mediaserver/media/tmp/animals/kitten_100x100_crop.jpg',
-            301)
-        self.assertEqual(
-            response['Cache-control'],
-            'cache-control=public, max-age=31536000')
 
 
 class ThumbnailFileTest(StorageTestCase):
-    def thumbnail(self, source, size, method, destination):
-        thumb = get_thumbnail(source, size, method)
+    def thumbnail(self, source, size, method, extension, destination):
+        thumb = get_thumbnail(source, size, method, extension)
         self.assertTrue(thumb.generate())
         self.assertTrue(self.storage.exists(destination))
         self.assertTrue(self.storage.size(destination) > 0)
 
     def test_can_crop(self):
         self.thumbnail(
-            'animals/kitten.jpg',
-            '100x100',
-            'crop',
-            'animals/kitten_100x100_crop.jpg')
+            'animals/kitten.jpg', '100x100', 'crop', '.jpg',
+            'animals/kitten.jpg__100x100__crop.jpg')
 
     def test_can_smart_crop(self):
         self.thumbnail(
-            'animals/kitten.jpg',
-            '100x100',
-            'smart',
-            'animals/kitten_100x100_smart.jpg')
+            'animals/kitten.jpg', '100x100', 'smart', '.jpg',
+            'animals/kitten.jpg__100x100__smart.jpg')
 
     def test_can_crop_on_width(self):
         self.thumbnail(
-            'animals/kitten.jpg',
-            '100x',
-            'crop',
-            'animals/kitten_100x0_crop.jpg')
+            'animals/kitten.jpg', '100x', 'crop', '.jpg',
+            'animals/kitten.jpg__100x0__crop.jpg')
 
     def test_can_crop_on_height(self):
         self.thumbnail(
-            'animals/kitten.jpg',
-            'x100',
-            'crop',
-            'animals/kitten_0x100_crop.jpg')
+            'animals/kitten.jpg', 'x100', 'crop', '.jpg',
+            'animals/kitten.jpg__0x100__crop.jpg')
 
     def test_can_upscale(self):
         self.thumbnail(
-            'animals/kitten.jpg',
-            '600x600',
-            'scale',
-            'animals/kitten_600x600_scale.jpg')
+            'animals/kitten.jpg', '600x600', 'scale', '.jpg',
+            'animals/kitten.jpg__600x600__scale.jpg')
 
 
 class DummyImageTest(TestCase):
     @override_settings(REST_THUMBNAILS_THUMBNAIL_PROXY='restthumbnails.proxies.DummyImageProxy')
     def test_can_get_url(self):
-        thumb = get_thumbnail_proxy('derp', '100x100', 'crop')
+        thumb = get_thumbnail_proxy('derp', '100x100', 'crop', '.jpg')
         self.assertEqual(
             thumb.url,
             'http://dummyimage.com/100x100')

@@ -7,9 +7,9 @@ from settings import *
 #     }
 # }
 
-INSTALLED_APPS += (
-    'devserver',
-)
+# INSTALLED_APPS += (
+#     'devserver',
+# )
 
 DEVSERVER_MODULES = (
     # 'devserver.modules.sql.SQLRealTimeModule',
@@ -23,3 +23,6 @@ DEVSERVER_MODULES = (
 )
 
 REST_THUMBNAILS_USE_SECRET_PARAM = False
+
+#REST_THUMBNAILS_RESPONSE_BACKEND = 'restthumbnails.responses.nginx.sendfile'
+#REST_THUMBNAILS_RESPONSE_BACKEND = 'restthumbnails.responses.apache.sendfile'

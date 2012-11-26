@@ -3,7 +3,7 @@ from django.core.files.storage import get_storage_class
 from django.utils.log import getLogger
 
 from restthumbnails.base import ThumbnailBase
-from restthumbnails import processors
+from restthumbnails import defaults, processors
 
 import os
 import time
@@ -42,26 +42,31 @@ class ThumbnailFile(ThumbnailFileBase):
     Manages the generation of thumbnails using the storage backends
     defined in settings.
 
-    >>> thumb = ThumbnailFile('path/to/file.jpg', (200, 200), 'crop')
+    >>> thumb = ThumbnailFile('path/to/file.jpg', (200, 200), 'crop', '.jpg')
     >>> thumb.generate()
     True
     >>> thumb.url
-    '/media/path/to/file_200x200_crop.jpg'
+    '/path/to/file.jpg__200x200__crop.jpg'
 
     """
-    def __init__(self, source, size, method):
-        super(ThumbnailFile, self).__init__(source, size, method)
-        self.source_storage = get_storage_class(getattr(
-            settings, 'REST_THUMBNAILS_SOURCE_STORAGE', None))()
-        self.storage = get_storage_class(getattr(
-            settings, 'REST_THUMBNAILS_STORAGE', None))()
+    def __init__(self, source, size, method, extension):
+        super(ThumbnailFile, self).__init__(source, size, method, extension)
+        self.source_storage = get_storage_class(getattr(settings,
+            'REST_THUMBNAILS_SOURCE_STORAGE', defaults.DEFAULT_SOURCE_STORAGE))()
+        self.storage = get_storage_class(getattr(settings,
+            'REST_THUMBNAILS_STORAGE', defaults.DEFAULT_STORAGE))()
+        self.file_signature = getattr(settings,
+            'REST_THUMBNAILS_FILE_SIGNATURE', defaults.DEFAULT_FILE_SIGNATURE)
 
-    def _generate_filename(self):
-        fname, ext = os.path.splitext(os.path.basename(self.source))
-        return u'%s_%s_%s%s' % (fname, self.size_string, self.method, ext)
-
-    def _base_path(self):
+    def _dirname(self):
         return os.path.normpath(os.path.dirname(self.source))
+
+    def _basename(self):
+        return self.file_signature % {
+            'source': os.path.basename(self.source),
+            'size': self.size_string,
+            'method': self.method,
+            'extension': self.extension}
 
     def _exists(self):
         return self.storage.exists(self.path)
@@ -69,9 +74,19 @@ class ThumbnailFile(ThumbnailFileBase):
     def _source_exists(self):
         return self.source_storage.exists(self.source)
 
+    def _generate(self):
+        if self._source_exists():
+            if not self._exists():
+                im = processors.get_image(self.source_storage.open(self.source))
+                im = processors.scale_and_crop(im, self.size, self.method)
+                im = processors.save_image(im)
+                self.storage.save(self.name, im)
+            return True
+        return False
+
     @property
     def name(self):
-        return os.path.join(self._base_path(), self._generate_filename())
+        return os.path.join(self._dirname(), self._basename())
 
     @property
     def path(self):
@@ -79,13 +94,4 @@ class ThumbnailFile(ThumbnailFileBase):
 
     @property
     def url(self):
-        return self.storage.url(self.name)
-
-    def _generate(self):
-        if not self._exists() and self._source_exists():
-            im = processors.get_image(self.source_storage.open(self.source))
-            im = processors.scale_and_crop(im, self.size, self.method)
-            im = processors.save_image(im)
-            self.storage.save(self.name, im)
-            return True
-        return False
+        return u'/%s' % self.name
