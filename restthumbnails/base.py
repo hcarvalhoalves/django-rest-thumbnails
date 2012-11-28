@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.utils.importlib import import_module
 
-from restthumbnails import defaults, helpers
+from restthumbnails import helpers
 
 
 class ThumbnailBase(object):
@@ -9,11 +9,11 @@ class ThumbnailBase(object):
     Abstract class used both by ThumbnailFile and ThumbnailProxy instances
     """
     def __init__(self, source, size, method, extension, **kwargs):
-        self.file_signature = getattr(settings,
-            'REST_THUMBNAILS_FILE_SIGNATURE', defaults.DEFAULT_FILE_SIGNATURE)
+        from restthumbnails import defaults
         # FieldFile/ImageFieldFile instances have a `name` attribute
         # with the relative file path
         self.source = getattr(source, 'name', source)
+        self.file_signature = defaults.FILE_SIGNATURE
         self.size = helpers.parse_size(size)
         self.method = helpers.parse_method(method)
         self.extension = extension

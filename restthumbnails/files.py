@@ -1,12 +1,9 @@
-from django.conf import settings
-from django.core.files.storage import get_storage_class
 from django.utils.log import getLogger
 
-from restthumbnails import defaults, processors, exceptions
+from restthumbnails import processors, exceptions
 from restthumbnails.base import ThumbnailBase
 
 import os
-import time
 
 
 logger = getLogger(__name__)
@@ -26,15 +23,7 @@ class ThumbnailFileBase(ThumbnailBase):
         raise NotImplementedError
 
     def generate(self):
-        start = time.clock()
-        generated = self._generate()
-        elapsed = (time.clock() - start)
-        if generated:
-            logger.info('%s took %ss', self.name, elapsed)
-        return generated
-
-    def _generate(self):
-        raise NotImplementedError
+        return self._generate()
 
 
 class ThumbnailFile(ThumbnailFileBase):
@@ -46,15 +35,20 @@ class ThumbnailFile(ThumbnailFileBase):
     >>> thumb.generate()
     True
     >>> thumb.url
-    '/path/to/file.jpg__200x200__crop.jpg'
+    '/path/to/file.jpg/200x200/crop/<random_hash>.jpg'
 
     """
     def __init__(self, **kwargs):
+        from restthumbnails import defaults
+        self.storage = defaults.storage_backend()
+        self.source_storage = defaults.source_storage_backend()
         super(ThumbnailFile, self).__init__(**kwargs)
-        self.source_storage = get_storage_class(getattr(settings,
-            'REST_THUMBNAILS_SOURCE_STORAGE', defaults.DEFAULT_SOURCE_STORAGE))()
-        self.storage = get_storage_class(getattr(settings,
-            'REST_THUMBNAILS_STORAGE', defaults.DEFAULT_STORAGE))()
+
+    def _exists(self):
+        return self.storage.exists(self.path)
+
+    def _source_exists(self):
+        return self.source_storage.exists(self.source)
 
     @property
     def name(self):
@@ -71,15 +65,9 @@ class ThumbnailFile(ThumbnailFileBase):
 
     @property
     def url(self):
-        return u'/%s' % self.name
+        return self.storage.url(self.name)
 
-    def _exists(self):
-        return self.storage.exists(self.path)
-
-    def _source_exists(self):
-        return self.source_storage.exists(self.source)
-
-    def _generate(self):
+    def generate(self):
         if not self._source_exists():
             raise exceptions.SourceDoesNotExist()
         if not self._exists():

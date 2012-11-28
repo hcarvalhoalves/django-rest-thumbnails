@@ -6,16 +6,13 @@ from django.views.generic import View
 
 from restthumbnails import defaults
 from restthumbnails.exceptions import ThumbnailError
-from restthumbnails.helpers import get_thumbnail, import_from_path
+from restthumbnails.helpers import get_thumbnail
 
 
 class ThumbnailView(View):
     def __init__(self, *args, **kwargs):
-        self.lock_timeout = getattr(settings,
-            'REST_THUMBNAILS_LOCK_TIMEOUT', defaults.DEFAULT_LOCK_TIMEOUT)
-        self.response_backend = getattr(settings,
-            'REST_THUMBNAILS_RESPONSE_BACKEND', defaults.DEFAULT_RESPONSE_BACKEND)
-        self.sendfile = import_from_path(self.response_backend)
+        self.lock_timeout = defaults.LOCK_TIMEOUT
+        self.sendfile = defaults.response_backend()
         super(ThumbnailView, self).__init__(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):

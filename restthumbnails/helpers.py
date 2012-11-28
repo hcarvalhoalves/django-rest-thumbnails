@@ -1,18 +1,12 @@
 from django.conf import settings
-from django.utils.importlib import import_module
 from django.utils.crypto import salted_hmac
 
-from restthumbnails import defaults, exceptions
+from restthumbnails import exceptions
 
 import re
 
 
 RE_SIZE = re.compile(r'(\d+)?x(\d+)?$')
-
-
-def import_from_path(cls_path):
-    package, name = cls_path.rsplit('.', 1)
-    return getattr(import_module(package), name)
 
 
 def parse_size(size):
@@ -54,15 +48,14 @@ def get_key(source, size, method, extension):
     """
     Get a unique key suitable for the cache backend.
     """
-    prefix = getattr(settings,
-        'REST_THUMBNAILS_KEY_PREFIX', defaults.DEFAULT_KEY_PREFIX)
-    return '-'.join((prefix, get_secret(source, size, method, extension)))
+    from restthumbnails import defaults
+    return '-'.join((
+        defaults.KEY_PREFIX, get_secret(source, size, method, extension)))
 
 
 def get_thumbnail(source, size, method, extension, secret):
-    cls_path = getattr(settings,
-        'REST_THUMBNAILS_THUMBNAIL_FILE', defaults.DEFAULT_THUMBNAIL_FILE)
-    instance = import_from_path(cls_path)(
+    from restthumbnails import defaults
+    instance = defaults.thumbnail_file()(
         source=source,
         size=size,
         method=method,
@@ -74,9 +67,8 @@ def get_thumbnail(source, size, method, extension, secret):
 
 
 def get_thumbnail_proxy(source, size, method, extension):
-    cls_path = getattr(settings,
-        'REST_THUMBNAILS_THUMBNAIL_PROXY', defaults.DEFAULT_THUMBNAIL_PROXY)
-    return import_from_path(cls_path)(
+    from restthumbnails import defaults
+    return defaults.thumbnail_proxy()(
         source=source,
         size=size,
         method=method,

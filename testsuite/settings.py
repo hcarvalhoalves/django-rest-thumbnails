@@ -51,6 +51,10 @@ LOGGING = {
     }
 }
 
-REST_THUMBNAILS_STORAGE = 'testsuite.storages.TemporaryStorage'
+#REST_THUMBNAILS_RESPONSE_BACKEND = 'restthumbnails.responses.nginx.sendfile'
+#REST_THUMBNAILS_RESPONSE_BACKEND = 'restthumbnails.responses.apache.sendfile'
 
-REST_THUMBNAILS_BASE_URL = '/'
+REST_THUMBNAILS_SOURCE_STORAGE_LOCATION = MEDIA_ROOT
+
+REST_THUMBNAILS_STORAGE_BACKEND = 'testsuite.storages.TemporaryStorage'
+REST_THUMBNAILS_STORAGE_LOCATION = os.path.join(MEDIA_ROOT, '..', 'tmp')

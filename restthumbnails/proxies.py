@@ -2,11 +2,8 @@ from django.conf import settings
 from django.utils.encoding import filepath_to_uri
 
 from restthumbnails.base import ThumbnailBase
-from restthumbnails import defaults
 
-import urllib
 import urlparse
-import os
 
 
 class ThumbnailProxyBase(ThumbnailBase):
@@ -21,13 +18,13 @@ class ThumbnailProxy(ThumbnailProxyBase):
 
     >>> thumb = ThumbnailProxy('path/to/file.jpg', (200, 200), 'crop', '.jpg')
     >>> thumb.url
-    '/path/to/file.jpg/200x200/crop/<random_hash>.jpg'
+    'http://example.com/path/to/file.jpg/200x200/crop/<random_hash>.jpg'
 
     """
     def __init__(self, **kwargs):
+        from restthumbnails import defaults
+        self.base_url = defaults.THUMBNAIL_PROXY_BASE_URL
         super(ThumbnailProxy, self).__init__(**kwargs)
-        self.base_url = getattr(settings,
-            'REST_THUMBNAILS_BASE_URL', defaults.DEFAULT_BASE_URL)
 
     @property
     def url(self):

@@ -1,0 +1,68 @@
+from django.template import Context
+from django.test.utils import override_settings
+
+from restthumbnails import exceptions
+from restthumbnails.templatetags.thumbnail import thumbnail as thumbnail_tag
+
+from testsuite.models import ImageModel
+from testsuite.tests.utils import StorageTestCase
+
+
+class ThumbnailTagTestBase(object):
+    def setUp(self):
+        super(ThumbnailTagTestBase, self).setUp()
+        self.source_instance = ImageModel.objects.create(image='images/image.jpg')
+        self.source = self.source_instance.image
+        self.ctx = Context()
+
+    def test_raise_exception_on_invalid_parameters(self):
+        self.assertRaises(
+            exceptions.ThumbnailError,
+            thumbnail_tag, self.ctx, self.source, None, None, None)
+        self.assertRaises(
+            exceptions.ThumbnailError,
+            thumbnail_tag, self.ctx, self.source, 'foo', 'crop', '.jpg')
+        self.assertRaises(
+            exceptions.ThumbnailError,
+            thumbnail_tag, self.ctx, self.source, '200', 'crop', '.jpg')
+        self.assertRaises(
+            exceptions.ThumbnailError,
+            thumbnail_tag, self.ctx, self.source, '200 x 200', 'crop', '.jpg')
+        self.assertRaises(
+            exceptions.ThumbnailError,
+            thumbnail_tag, self.ctx, self.source, '200x200', 'foo', '.jpg')
+        # self.assertRaises(
+        #     exceptions.ThumbnailError,
+        #     thumbnail_tag, self.ctx, self.source, '200x200', 'crop', 'foo')
+
+
+@override_settings(REST_THUMBNAILS_THUMBNAIL_PROXY='restthumbnails.proxies.ThumbnailProxy')
+class ThumbnailProxyTest(ThumbnailTagTestBase, StorageTestCase):
+    def test_can_get_url(self):
+        thumb = thumbnail_tag(
+            context=self.ctx,
+            source=self.source,
+            size='100x100',
+            method='crop',
+            extension='.jpg')
+        self.assertIsNotNone(
+            thumb)
+        self.assertEquals(
+            thumb.url,
+            '/images/image.jpg/100x100/crop/2c72090b2311c8d1eeeef881ce734f6f808193a0.jpg')
+
+
+@override_settings(REST_THUMBNAILS_THUMBNAIL_PROXY='restthumbnails.proxies.DummyImageProxy')
+class DummyImageProxyTest(ThumbnailTagTestBase, StorageTestCase):
+    def test_can_get_url(self):
+        thumb = thumbnail_tag(
+            context=self.ctx,
+            source=self.source,
+            size='100x100',
+            method='crop',
+            extension='.jpg')
+        self.assertIsNotNone(
+            thumb)
+        self.assertEqual(
+            thumb.url,
+            'http://dummyimage.com/100x100')
