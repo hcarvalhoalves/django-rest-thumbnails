@@ -1,13 +1,18 @@
 class ThumbnailError(Exception):
-    """
-    Base class for all thumbnail related errors.
-    """
+    status = 400
+
+
+class InvalidSizeError(ThumbnailError):
     pass
 
 
-class InvalidThumbnailSizeError(ThumbnailError):
+class InvalidMethodError(ThumbnailError):
     pass
 
 
-class InvalidThumbnailMethodError(ThumbnailError):
-    pass
+class InvalidSecretError(ThumbnailError):
+    status = 401
+
+
+class SourceDoesNotExist(ThumbnailError):
+    status = 404

@@ -18,7 +18,7 @@ class TestCommand(test):
 
 setup(
     name='django-rest-thumbnails',
-    version='1.0b9',
+    version='1.1b1',
     url='http://github.com/hcarvalhoalves/django-rest-thumbnails',
     description='Simple and scalable thumbnail generation via REST API',
     long_description=readfile('README.md'),
@@ -26,6 +26,7 @@ setup(
     author_email='hcarvalhoalves@gmail.com',
     packages=[
         'restthumbnails',
+        'restthumbnails.responses',
         'restthumbnails.templatetags',
     ],
     include_package_data=True,

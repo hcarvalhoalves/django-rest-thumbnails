@@ -10,12 +10,6 @@ import os
 
 
 class ThumbnailProxyBase(ThumbnailBase):
-    def __init__(self, source, size, method, extension):
-        # FieldFile/ImageFieldFile instances have a `name` attribute
-        # with the relative file path
-        source = getattr(source, 'name', source)
-        super(ThumbnailProxyBase, self).__init__(source, size, method, extension)
-
     @property
     def url(self):
         raise NotImplementedError
@@ -27,15 +21,13 @@ class ThumbnailProxy(ThumbnailProxyBase):
 
     >>> thumb = ThumbnailProxy('path/to/file.jpg', (200, 200), 'crop', '.jpg')
     >>> thumb.url
-    '/path/to/file.jpg__200x200__crop.jpg'
+    '/path/to/file.jpg/200x200/crop/<random_hash>.jpg'
 
     """
-    def __init__(self, source, size, method, extension):
-        super(ThumbnailProxy, self).__init__(source, size, method, extension)
+    def __init__(self, **kwargs):
+        super(ThumbnailProxy, self).__init__(**kwargs)
         self.base_url = getattr(settings,
             'REST_THUMBNAILS_BASE_URL', defaults.DEFAULT_BASE_URL)
-        self.file_signature = getattr(settings,
-            'REST_THUMBNAILS_FILE_SIGNATURE', defaults.DEFAULT_FILE_SIGNATURE)
 
     @property
     def url(self):
@@ -43,6 +35,7 @@ class ThumbnailProxy(ThumbnailProxyBase):
             'source': filepath_to_uri(self.source),
             'size': self.size_string,
             'method': self.method,
+            'secret': self.secret,
             'extension': self.extension}
         return urlparse.urljoin(self.base_url, url)
 

@@ -1,14 +1,21 @@
-from restthumbnails.helpers import get_secret, get_key
+from django.conf import settings
+from django.utils.importlib import import_module
+
+from restthumbnails import defaults, helpers
 
 
 class ThumbnailBase(object):
     """
     Abstract class used both by ThumbnailFile and ThumbnailProxy instances
     """
-    def __init__(self, source, size, method, extension):
-        self.source = source
-        self.size = size
-        self.method = method
+    def __init__(self, source, size, method, extension, **kwargs):
+        self.file_signature = getattr(settings,
+            'REST_THUMBNAILS_FILE_SIGNATURE', defaults.DEFAULT_FILE_SIGNATURE)
+        # FieldFile/ImageFieldFile instances have a `name` attribute
+        # with the relative file path
+        self.source = getattr(source, 'name', source)
+        self.size = helpers.parse_size(size)
+        self.method = helpers.parse_method(method)
         self.extension = extension
 
     @property
@@ -17,8 +24,10 @@ class ThumbnailBase(object):
 
     @property
     def secret(self):
-        return get_secret(self.source, self.size_string, self.method)
+        return helpers.get_secret(
+            self.source, self.size_string, self.method, self.extension)
 
     @property
     def key(self):
-        return get_key(self.source, self.size_string, self.method)
+        return helpers.get_key(
+            self.source, self.size_string, self.method, self.extension)
