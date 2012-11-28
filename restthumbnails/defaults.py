@@ -22,7 +22,7 @@ FILE_SIGNATURE = getattr(settings,
 
 THUMBNAIL_PROXY_BASE_URL = getattr(settings,
     'REST_THUMBNAILS_THUMBNAIL_PROXY_BASE_URL',
-    '/thumbnails')
+    '/thumbnails/')
 
 def thumbnail_proxy():
     THUMBNAIL_PROXY = getattr(settings,

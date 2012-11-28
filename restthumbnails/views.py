@@ -33,7 +33,7 @@ class ThumbnailView(View):
             finally:
                 cache.delete(thumbnail.key)
             # Internal redirect to the generated file
-            return self.sendfile(request, thumbnail.url)
+            return self.sendfile(request, thumbnail)
 
         # Return 404 while there's a lock. Also, make sure user agents and
         # proxies don't cache this intermediate response.
