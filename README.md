@@ -141,90 +141,106 @@ to run the thumbnail server in a different domain / worker process, you need to
 make sure this value is in sync. If the secret doesn't match, the server will
 return `401 Unauthorized`.
 
+Thumbnail tag
+-------------
+
+The thumbnail tag accepts either a `FileField` instance…
+
+    {% thumbnail model.image_field "100x100" "crop" ".jpg" as field_kitten %}
+
+or a path (relative to `REST_THUMBNAILS_SOURCE_STORAGE_LOCATION`)…
+
+    {% thumbnail "animals/kitten.jpg" "100x100" "crop" ".jpg" as path_kitten %}
+
 ### Size options
 
-At least one dimension is required. The app will try to scale and crop if only
-one dimension is provided:
+At least one dimension is required. The app will scale and crop appropriately:
 
     {% thumbnail model.image_field "500x" "crop" ".jpg" as fat_kitten %}
 
     {% thumbnail model.image_field "x500" "crop" ".jpg" as tall_kitten %}
 
+To maintain consistency, you may want to use predefined variables:
+
+    {% thumbnail model.image_field avatar_size "crop" ".jpg" as kitten_avatar %}
+
 
 ### Method options
 
-#### `crop`
-Crop the image, maintaining the aspect ratio when possible.
+#### crop
+Crop the image. It will maintain the aspect ratio if only one dimension is defined.
 
-#### `scale`
-Just scale the image until it matches one or all of the dimensions.
+#### scale
+Just scale the image until it matches at least one of the dimensions.
 
-#### `smart`
-Smart crop the image by keeping the areas with the highest entropy.
+#### smart
+Smart crop the image, by keeping the areas with the highest entropy intact.
 
 
 Server settings
 ---------------
 
-#### `REST_THUMBNAILS_SOURCE_STORAGE_BACKEND`
-Default: `'django.core.files.storage.FileSystemStorage'`
+#### REST_THUMBNAILS_SOURCE_STORAGE_BACKEND
+*Default:* `'django.core.files.storage.FileSystemStorage'`
 
 The Django `FileStorage` class used to open the source files images (the path
 requested on the URL).
 
-#### `REST_THUMBNAILS_SOURCE_STORAGE_LOCATION`
-Default: `MEDIA_ROOT`
+#### REST_THUMBNAILS_SOURCE_STORAGE_LOCATION
+*Default:* `MEDIA_ROOT`
 
 The absolute path for the directory holding your source images.
 
-#### `REST_THUMBNAILS_STORAGE_BACKEND`
-Default: `'django.core.files.storage.FileSystemStorage'`
+#### REST_THUMBNAILS_STORAGE_BACKEND
+*Default:* `'django.core.files.storage.FileSystemStorage'`
 
 The Django `FileStorage` class used to store the output thumbnail files.
 
-#### `REST_THUMBNAILS_STORAGE_LOCATION`
-Default: `'%(MEDIA_ROOT)s/../thumbnails/'`
+#### REST_THUMBNAILS_STORAGE_LOCATION
+*Default:* `'%(MEDIA_ROOT)s/../thumbnails/'`
 
 The absolute path for the directory holding the output files. By default, it's
 a directory called `thumbnails` sitting *beside* your `MEDIA_ROOT`.
 
-### `REST_THUMBNAILS_STORAGE_BASE_PATH`
-Default: `'/thumbnails/'`
+### REST_THUMBNAILS_STORAGE_BASE_PATH
+*Default:* `'/thumbnails/'`
 
 Base path used for X-Sendfile/X-Accel-Redirect responses. This gets
 concatenated to the file path, and should *always* be a URI relative
 to the same host. Effectively, this should return the same URL that
 was requested so you can use the `try_files` trick.
 
-#### `REST_THUMBNAILS_LOCK_TIMEOUT`
-Default: `10`
+#### REST_THUMBNAILS_LOCK_TIMEOUT
+*Default:* `10`
 
 The maximum amount of time workers are allowed to return `404` while another
 worker is busy generating the same thumbnail. This is to avoid dogpilling the
 server with multiple requests to the same thumbnail.
 
-#### `REST_THUMBNAILS_KEY_PREFIX`
-Default: `'restthumbnails'`
+#### REST_THUMBNAILS_KEY_PREFIX
+*Default:* `'restthumbnails'`
 
 Prefix for cache key. You may change this to avoid clashes with other keys if
 you share the same memcached instance.
 
-#### `REST_THUMBNAILS_RESPONSE_BACKEND`
-Default: `'restthumbnails.responses.dummy.sendfile'`
+#### REST_THUMBNAILS_RESPONSE_BACKEND
+*Default:* `'restthumbnails.responses.dummy.sendfile'`
 
 A function responsible to return an appropriate `HttpReponse` after the
 thumbnail is generated. The default streams the file directly using Django's
 built-in server and is *only* appropriate for development. The other options
 are:
 
-- `'restthumbnails.responses.nginx.sendfile'` (uses `X-Accel-Redirect` header)
-- `'restthumbnails.responses.apache.sendfile'` (uses `X-Sendfile` header)
+- `'restthumbnails.responses.nginx.sendfile'`
+
+- `'restthumbnails.responses.apache.sendfile'`
+
 
 Client settings
 ---------------
 
-### `REST_THUMBNAILS_PROXY_BASE_URL`
-Default: `'/'`
+### REST_THUMBNAILS_PROXY_BASE_URL
+*Default:* `'/'`
 
 The base URL for your thumbnail server. By default, we assume it's running on
 the same host. It can be relative to the same server (like
