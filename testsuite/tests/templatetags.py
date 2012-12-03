@@ -36,7 +36,7 @@ class ThumbnailTagTestBase(object):
         #     thumbnail_tag, self.ctx, self.source, '200x200', 'crop', 'foo')
 
 
-@override_settings(REST_THUMBNAILS_THUMBNAIL_PROXY='restthumbnails.proxies.ThumbnailProxy')
+@override_settings(THUMBNAILS_PROXY='restthumbnails.proxies.ThumbnailProxy')
 class ThumbnailProxyTest(ThumbnailTagTestBase, StorageTestCase):
     def test_can_get_url(self):
         thumb = thumbnail_tag(
@@ -52,7 +52,7 @@ class ThumbnailProxyTest(ThumbnailTagTestBase, StorageTestCase):
             '/thumbnails/images/image.jpg/100x100/crop/2c72090b2311c8d1eeeef881ce734f6f808193a0.jpg')
 
 
-@override_settings(REST_THUMBNAILS_THUMBNAIL_PROXY='restthumbnails.proxies.DummyImageProxy')
+@override_settings(THUMBNAILS_PROXY='restthumbnails.proxies.DummyImageProxy')
 class DummyImageProxyTest(ThumbnailTagTestBase, StorageTestCase):
     def test_can_get_url(self):
         thumb = thumbnail_tag(

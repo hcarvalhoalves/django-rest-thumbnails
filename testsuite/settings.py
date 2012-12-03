@@ -51,8 +51,8 @@ LOGGING = {
     }
 }
 
-#REST_THUMBNAILS_RESPONSE_BACKEND = 'restthumbnails.responses.nginx.sendfile'
-#REST_THUMBNAILS_RESPONSE_BACKEND = 'restthumbnails.responses.apache.sendfile'
+#THUMBNAILS_RESPONSE_BACKEND = 'restthumbnails.responses.nginx.sendfile'
+#THUMBNAILS_RESPONSE_BACKEND = 'restthumbnails.responses.apache.sendfile'
 
-REST_THUMBNAILS_STORAGE_BACKEND = 'testsuite.storages.TemporaryStorage'
-REST_THUMBNAILS_STORAGE_LOCATION = os.path.join(MEDIA_ROOT, '..', 'thumbnails')
+THUMBNAILS_STORAGE_BACKEND = 'testsuite.storages.TemporaryStorage'
+THUMBNAILS_STORAGE_ROOT = os.path.join(MEDIA_ROOT, '..', 'thumbnails')

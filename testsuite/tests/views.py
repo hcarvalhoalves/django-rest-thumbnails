@@ -57,7 +57,7 @@ class DefaultBackendTest(object):
             400)
 
 
-@override_settings(REST_THUMBNAILS_RESPONSE_BACKEND='restthumbnails.responses.nginx.sendfile')
+@override_settings(THUMBNAILS_RESPONSE_BACKEND='restthumbnails.responses.nginx.sendfile')
 class NginxBackendTest(DefaultBackendTest, ResponseBackendTestBase):
     def test_response_headers(self):
         response = self.get(
@@ -76,7 +76,7 @@ class NginxBackendTest(DefaultBackendTest, ResponseBackendTestBase):
             response)
 
 
-@override_settings(REST_THUMBNAILS_RESPONSE_BACKEND='restthumbnails.responses.apache.sendfile')
+@override_settings(THUMBNAILS_RESPONSE_BACKEND='restthumbnails.responses.apache.sendfile')
 class ApacheBackendTest(DefaultBackendTest, ResponseBackendTestBase):
     def test_response_headers(self):
         response = self.get(
