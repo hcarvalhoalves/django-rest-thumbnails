@@ -18,7 +18,7 @@ class TestCommand(test):
 
 setup(
     name='django-rest-thumbnails',
-    version='1.1b3',
+    version='1.1b4',
     url='http://github.com/hcarvalhoalves/django-rest-thumbnails',
     description='Simple and scalable thumbnail generation via REST API',
     long_description=readfile('README.md'),

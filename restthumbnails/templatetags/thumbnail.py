@@ -7,4 +7,6 @@ register = Library()
 
 @register.assignment_tag(takes_context=True)
 def thumbnail(context, source, size, method, extension):
-    return get_thumbnail_proxy(source, size, method, extension)
+    if source:
+        return get_thumbnail_proxy(source, size, method, extension)
+    return None

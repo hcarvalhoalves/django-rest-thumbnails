@@ -35,6 +35,11 @@ class ThumbnailTagTestBase(object):
         #     exceptions.ThumbnailError,
         #     thumbnail_tag, self.ctx, self.source, '200x200', 'crop', 'foo')
 
+    def test_none_on_empty_source(self):
+        self.assertEqual(
+            thumbnail_tag(self.ctx, '', '200x200', 'crop', '.jpg'),
+            None)
+
 
 @override_settings(THUMBNAILS_PROXY='restthumbnails.proxies.ThumbnailProxy')
 class ThumbnailProxyTest(ThumbnailTagTestBase, StorageTestCase):
