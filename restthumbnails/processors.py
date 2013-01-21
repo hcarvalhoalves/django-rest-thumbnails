@@ -29,8 +29,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from django.core.files.base import ContentFile
-
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -42,6 +40,10 @@ except ImportError:
     import Image
     import ImageChops
     import ImageFilter
+
+from django.core.files.base import ContentFile
+
+from restthumbnails import exceptions
 
 import re
 import math
@@ -134,16 +136,13 @@ def get_image(source, exif_orientation=True, **options):
     # object, PIL may have problems with it. For example, some image types
     # require tell and seek methods that are not present on all storage
     # File objects.
-    if not source:
-        return
+
     source = StringIO(source.read())
-    try:
-        image = Image.open(source)
-        # Fully load the image now to catch any problems with the image
-        # contents.
-        image.load()
-    except Exception:
-        return
+
+    image = Image.open(source)
+    # Fully load the image now to catch any problems with the image
+    # contents.
+    image.load()
 
     if exif_orientation:
         image = _exif_orientation(image)
