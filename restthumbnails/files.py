@@ -68,12 +68,12 @@ class ThumbnailFile(ThumbnailFileBase):
         return self.storage.url(self.name)
 
     def generate(self):
-        if not self._source_exists():
-            raise exceptions.SourceDoesNotExist()
-        if not self._exists():
-            im = processors.get_image(self.source_storage.open(self.source))
-            im = processors.scale_and_crop(im, self.size, self.method)
-            im = processors.save_image(im)
-            self.storage.save(self.name, im)
-            return True
-        return False
+        if self._source_exists():
+            if not self._exists():
+                im = processors.get_image(self.source_storage.open(self.source))
+                im = processors.scale_and_crop(im, self.size, self.method)
+                im = processors.save_image(im)
+                self.storage.save(self.name, im)
+                return True
+            return False
+        raise exceptions.SourceDoesNotExist()
