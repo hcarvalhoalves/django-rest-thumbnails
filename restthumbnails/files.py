@@ -72,6 +72,7 @@ class ThumbnailFile(ThumbnailFileBase):
             if not self._exists():
                 im = processors.get_image(self.source_storage.open(self.source))
                 im = processors.scale_and_crop(im, self.size, self.method)
+                im = processors.colorspace(im)
                 im = processors.save_image(im)
                 self.storage.save(self.name, im)
                 return True
