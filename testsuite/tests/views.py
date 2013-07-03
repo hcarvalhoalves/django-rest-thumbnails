@@ -70,7 +70,7 @@ class NginxBackendTest(DefaultBackendTest, ResponseBackendTestBase):
             200)
         self.assertEqual(
             response['X-Accel-Redirect'],
-            '/thumbnails/animals/kitten.jpg/100x100/crop/534790445e822052a0850de28544e19065425700.jpg')
+            '/thumbnails/animals/kitten.jpg/100x100/crop/38cdd9ad3dda068a81ebd59c113039637c1c8d1d.jpg')
         self.assertNotIn(
             'Content-Type',
             response)
@@ -89,6 +89,6 @@ class ApacheBackendTest(DefaultBackendTest, ResponseBackendTestBase):
             200)
         self.assertEqual(
             response['X-Sendfile'],
-            '/thumbnails/animals/kitten.jpg/100x100/crop/534790445e822052a0850de28544e19065425700.jpg')
+            '/thumbnails/animals/kitten.jpg/100x100/crop/38cdd9ad3dda068a81ebd59c113039637c1c8d1d.jpg')
         self.assertNotIn(
             'Content-Type', response)

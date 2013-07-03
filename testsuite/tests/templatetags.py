@@ -54,7 +54,7 @@ class ThumbnailProxyTest(ThumbnailTagTestBase, StorageTestCase):
             thumb)
         self.assertEquals(
             thumb.url,
-            '/thumbnails/images/image.jpg/100x100/crop/2c72090b2311c8d1eeeef881ce734f6f808193a0.jpg')
+            '/thumbnails/images/image.jpg/100x100/crop/72ebae3f7fcda69b79bbf1c55ebe22197100e06e.jpg')
 
 
 @override_settings(THUMBNAILS_PROXY='restthumbnails.proxies.DummyImageProxy')

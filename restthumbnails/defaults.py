@@ -4,7 +4,6 @@ from django.utils.importlib import import_module
 
 import os
 
-
 def import_from_path(cls_path):
     package, name = cls_path.rsplit('.', 1)
     return getattr(import_module(package), name)

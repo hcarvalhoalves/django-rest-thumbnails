@@ -5,6 +5,8 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG = True
 
+SECRET_KEY = 'foobar'
+
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(ROOT_DIR, 'media')
