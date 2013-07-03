@@ -38,11 +38,11 @@ class ThumbnailFile(ThumbnailFileBase):
     '/path/to/file.jpg/200x200/crop/<random_hash>.jpg'
 
     """
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         from restthumbnails import defaults
         self.storage = defaults.storage_backend()
         self.source_storage = defaults.source_storage_backend()
-        super(ThumbnailFile, self).__init__(**kwargs)
+        super(ThumbnailFile, self).__init__(*args, **kwargs)
 
     def _exists(self):
         return self.storage.exists(self.path)
@@ -77,4 +77,4 @@ class ThumbnailFile(ThumbnailFileBase):
                 self.storage.save(self.name, im)
                 return True
             return False
-        raise exceptions.SourceDoesNotExist()
+        raise exceptions.SourceDoesNotExist(self.source)
